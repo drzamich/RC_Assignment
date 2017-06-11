@@ -10,7 +10,7 @@ def DataInput(fileName):
     NodeList = []
     ff = open(fileName,'r')
     z1 = ff.readline()
-    z2 = z1.strip()gh
+    z2 = z1.strip()
     z3 = z2.split(',')
     while z1<>"":           #
         if z3[0]=="*node":                              # key NODE
