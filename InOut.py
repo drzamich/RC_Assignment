@@ -2,6 +2,9 @@ import Elements
 reload(Elements)
 from Elements import *
 
+
+#this creates a data from the input file
+
 def DataInput(fileName):
     MList = []
     LoadList = []
@@ -9,12 +12,12 @@ def DataInput(fileName):
     BoundList = []
     NodeList = []
     ff = open(fileName,'r')
-    z1 = ff.readline()
+    z1 = ff.readline()  #reading line by line the whole line
     z2 = z1.strip()
-    z3 = z2.split(',')
+    z3 = z2.split(',')   #1st element of the splitted list
     while z1<>"":           #
         if z3[0]=="*node":                              # key NODE
-            IType = "node"
+            IType = "node"  #define  out item type to the string "node"
         elif z3[0]=="*element":                         # key ELEMENT
             IType = "element"
             for i in z3:
@@ -38,7 +41,7 @@ def DataInput(fileName):
                 if eltype=='CPS4':
                     ElemList += [CPS4( int(z3[0]), [int(z3[1]),int(z3[2]),int(z3[3]),int(z3[4])], 1.0, True, NodeList)]
             elif IType=="mat":
-                MList += [float(z3[0]), float(z3[1])]
+                MList += [float(z3[0]), float(z3[1])]  #youngs modulus and poissons ratio
             elif IType=="load":
                 i0 = FindIndexByLabel(NodeList, int(z3[0]))
                 if i0>-1: LoadList += [[ i0, int(z3[1]), float(z3[2])]]
@@ -47,7 +50,7 @@ def DataInput(fileName):
                 i0 = FindIndexByLabel(NodeList, int(z3[0]))
                 if i0>-1: BoundList += [[ i0, int(z3[1]), float(z3[2]) ]]
                 else: raise NameError ("boundary node not found")
-        z1 = ff.readline()
+        z1 = ff.readline()  #we go one line forward
         z2 = z1.strip()
         z3 = z2.split(',')
     ff.close()
@@ -55,6 +58,6 @@ def DataInput(fileName):
 
 def DataOut(fileName, uu ):
     ff = open(fileName,'w')
-    for i in xrange(len(uu)):
-        ff.write('%7i%9.4f\n'%(i, uu[i]))
+    for i in xrange(len(uu)):   #it's written in the script how to get stresses
+        ff.write('%7i%9.4f\n'%(i, uu[i]))  #its not necessary to create a graph
     ff.close()

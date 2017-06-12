@@ -18,7 +18,7 @@ class Node(object):
         self.GlobDofStart = 0  # will be later be filled with first index of global degrees of freedom for this node
 
 
-class Element(object):
+class Element(object): #daughter of class object
     """ holds element parameters.
     """
 
@@ -46,9 +46,9 @@ class Element(object):
         self.PlSt = None  # later relevant for CPS4 only
 
 
-class T1D2(Element):
+class T1D2(Element):  #daughter of class element
     def __init__(self, Label, InzList, AA, NoList):
-        Element.__init__(self, "T1D2", 2, 2, 0, 1, 1, (set([1]), set([1])), (1, 1), 1, Label, InzList, NoList)
+        Element.__init__(self, "T1D2", 2, 2, 0, 1, 1, (set([1]), set([1])), (1, 1), 1, Label, InzList, NoList)  #here we call the init function of the mother
         self.LL = sqrt((NoList[self.Inzi[1]].XCo - NoList[self.Inzi[0]].XCo) ** 2)  # element length
         self.Geom = AA
 
@@ -62,7 +62,7 @@ class T1D2(Element):
         return B, L / 2.
 
 
-class T2D2(Element):
+class T2D2(Element): #its the daughter class of class 'element'
     def __init__(self, Label, InzList, AA, NoList):
         Element.__init__(self, "T2D2", 2, 4, 0, 1, 1, (set([1, 2]), set([1, 2])), (2, 2), 1, Label, InzList, NoList)
         L = sqrt((NoList[self.Inzi[1]].XCo - NoList[self.Inzi[0]].XCo) ** 2 + (
@@ -138,5 +138,5 @@ class CPS4(Element):
         B = array([[B00, 0, B10, 0, B20, 0, B30, 0],
                    [0, B01, 0, B11, 0, B21, 0, B31],
                    [B01, B00, B11, B10, B21, B20, B31, B30]])
-        return B, det
+        return B, det  #B matrix and Jacobian
 
