@@ -40,6 +40,8 @@ def DataInput(fileName):
                     ElemList += [T2D2( int(z3[0]), [int(z3[1]),int(z3[2])], float(z3[3]), NodeList)]
                 if eltype=='CPS4':
                     ElemList += [CPS4( int(z3[0]), [int(z3[1]),int(z3[2]),int(z3[3]),int(z3[4])], 1.0, True, NodeList)]
+                if eltype =='CPE4':
+                    ElemList += [CPS4(int(z3[0]), [int(z3[1]), int(z3[2]), int(z3[3]), int(z3[4])], float(z3[5]), False, NodeList)]
             elif IType=="mat":
                 MList += [float(z3[0]), float(z3[1])]  #youngs modulus and poissons ratio
             elif IType=="load":
@@ -58,6 +60,15 @@ def DataInput(fileName):
 
 def DataOut(fileName, uu ):
     ff = open(fileName,'w')
-    for i in xrange(len(uu)):   #it's written in the script how to get stresses
-        ff.write('%7i%9.4f\n'%(i, uu[i]))  #its not necessary to create a graph
+    for i in xrange(len(uu)):   #it's written in the script how to get stresse
+         ff.write('%3i%15.10f\n'%(i, uu[i]))  #its not necessary to create a graph
+    ff.close()
+
+def DataOutStresses(fileName, uu ):
+    ff = open(fileName,'w')
+    for i in xrange(len(uu)/3):   #it's written in the script how to get stresse
+        # ff.write('%3i%15.10f\n' % (i, uu[i]))
+        ff.write('Element %3i sigma_x: %e\n' % (i, uu[i*3]))
+        ff.write('Element %3i sigma_y: %e\n' % (i, uu[i*3+1]))
+        ff.write('Element %3i tau_xy:  %e\n' % (i, uu[i*3+2]))
     ff.close()

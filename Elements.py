@@ -5,6 +5,7 @@ def FindIndexByLabel(NodeList, Key):  # find index from label
     if len(NodeList) == 0: raise NameError("no nodes defined")
     for i in range(len(NodeList)):  # loop over all nodes
         if NodeList[i].Label == Key: return i
+    # else:
     return -1  # no node found
 
 
@@ -85,7 +86,7 @@ class T2D2(Element): #its the daughter class of class 'element'
 
 class CPS4(Element):
     def __init__(self, Label, InzList, thickness, PlSt, NoList):
-        Element.__init__(self, "CPS4", 4, 8, 1, 2, 4, (set([1, 2]), set([1, 2]), set([1, 2]), set([1, 2])),
+        Element.__init__(self, "CPS4", 4, 8, 1, 2, 4 , (set([1, 2]), set([1, 2]), set([1, 2]), set([1, 2])),
                          (2, 2, 2, 2), 2, Label, InzList, NoList)
         self.PlSt = PlSt  # flag for plane stress (True->plane stress, False->plane strain)
         self.Geom = thickness
@@ -101,6 +102,7 @@ class CPS4(Element):
         (self.X1 - self.X3) * (self.Y2 - self.Y0) + (self.X2 - self.X0) * (self.Y3 - self.Y1))  # element area
         if self.AA <= 0.: raise NameError("Something is wrong with this CPE4-element")
 
+    #matrix of the shape functions
     def FormN(self, r, s, t):
         N = array([[(1 + r) * (1 + s) * 0.25, 0, (1 - r) * (1 + s) * 0.25, 0, (1 - r) * (1 - s) * 0.25, 0,
                     (1 + r) * (1 - s) * 0.25, 0],
@@ -109,6 +111,7 @@ class CPS4(Element):
         return N
 
     def FormB(self, r, s, t):
+        #derivatives of the shape function (P)
         h00 = (1 + s) * 0.25
         h01 = (1 + r) * 0.25
         h10 = -(1 + s) * 0.25
@@ -117,16 +120,23 @@ class CPS4(Element):
         h21 = (-1 + r) * 0.25
         h30 = (1 - s) * 0.25
         h31 = -(1 + r) * 0.25
+
+        #X - matrix of node coordinates
+        # J=P*x
         JAC00 = h00 * self.X0 + h10 * self.X1 + h20 * self.X2 + h30 * self.X3
         JAC01 = h00 * self.Y0 + h10 * self.Y1 + h20 * self.Y2 + h30 * self.Y3
         JAC10 = h01 * self.X0 + h11 * self.X1 + h21 * self.X2 + h31 * self.X3
         JAC11 = h01 * self.Y0 + h11 * self.Y1 + h21 * self.Y2 + h31 * self.Y3
         det = JAC00 * JAC11 - JAC01 * JAC10
         deti = 1. / det
+
+        #H
         a1 = self.Y0 * h01 + self.Y1 * h11 + self.Y2 * h21 + self.Y3 * h31
         a2 = self.Y0 * h00 + self.Y1 * h10 + self.Y2 * h20 + self.Y3 * h30
         b1 = self.X0 * h01 + self.X1 * h11 + self.X2 * h21 + self.X3 * h31
         b2 = self.X0 * h00 + self.X1 * h10 + self.X2 * h20 + self.X3 * h30
+
+
         B00 = deti * (h00 * a1 - h01 * a2)
         B10 = deti * (h10 * a1 - h11 * a2)
         B20 = deti * (h20 * a1 - h21 * a2)
@@ -138,5 +148,7 @@ class CPS4(Element):
         B = array([[B00, 0, B10, 0, B20, 0, B30, 0],
                    [0, B01, 0, B11, 0, B21, 0, B31],
                    [B01, B00, B11, B10, B21, B20, B31, B30]])
+
+
         return B, det  #B matrix and Jacobian
 

@@ -32,7 +32,7 @@ SampleWeight[0, 2, 2] = 0.555555555555556
 
 # Sample points and weighting factors for Gauss Quadrature 2D
 SamplePoints[1, 0, 0] = [0., 0., 0.]
-SampleWeight[1, 0, 0] = 4.
+# SampleWeight[1, 0, 0] = 4.
 SamplePoints[1, 1, 0] = [-0.577350269189626, -0.577350269189626, 0.]
 SamplePoints[1, 1, 1] = [-0.577350269189626, 0.577350269189626, 0.]
 SamplePoints[1, 1, 2] = [0.577350269189626, -0.577350269189626, 0.]
@@ -43,19 +43,51 @@ SampleWeight[1, 1, 2] = 1.
 SampleWeight[1, 1, 3] = 1.
 
 
+#definition of the M matrix for isotropic material
+# def MatC(PlSt, Emod, nu, dim):  #out of this we have to make it osothropic - this we have to edit for task 2
+#     if dim == 1:  #for truss or a beam
+#         MatM = array([[Emod, 0], [0, 0]])
+#     elif dim == 2:  #same as we did in our excercies last time
+#         if PlSt:
+#             MatM = Emod / (1 - nu ** 2) * array([[1, nu, 0], \
+#                                                  [nu, 1, 0], \
+#                                                  [0, 0, (1 - nu) / 2]])  # plane stress
+#         else:
+#             MatM = Emod * (1 - nu) / ((1 + nu) * (1 - 2 * nu)) * array([[1, nu / (1 - nu), 0],       #this is what we've done in the
+#                                                                         [nu / (1 - nu), 1, 0],
+#                                                                         [0, 0, (1 - 2 * nu) / (
+#                                                                         2 * (1 - nu))]])  # plane strain
+#     return MatM  #returns the matrix for the material
+
+
+#definition of the C matrix for otrhotropic material
 def MatC(PlSt, Emod, nu, dim):  #out of this we have to make it osothropic - this we have to edit for task 2
     if dim == 1:  #for truss or a beam
         MatM = array([[Emod, 0], [0, 0]])
     elif dim == 2:  #same as we did in our excercies last time
         if PlSt:
-            MatM = Emod / (1 - nu ** 2) * array([[1, nu, 0], \
-                                                 [nu, 1, 0], \
-                                                 [0, 0, (1 - nu) / 2]])  # plane stress
+            #plane stress
+            raise NameError("C matrix for plane stress for otrotropic material not defined")
         else:
-            MatM = Emod * (1 - nu) / ((1 + nu) * (1 - 2 * nu)) * array([[1, nu / (1 - nu), 0],       #this is what we've done in the
-                                                                        [nu / (1 - nu), 1, 0],
-                                                                        [0, 0, (1 - 2 * nu) / (
-                                                                        2 * (1 - nu))]])  # plane strain
+            # plane strain
+            nu_xz=nu
+            nu_zx=nu
+            nu_yz=nu
+            nu_zy=nu
+            nu_xy=nu
+            nu_yx=nu
+
+            Ex=Emod
+            Ey=0.5*Emod
+
+            Gxy =  ((1+nu_yx)/Ex+(1+nu_xy)/Ey)**(-1)  #equation 7.25 "a primer for finite elements", page 168
+
+            D=(1-nu_xz*nu_zx)*(1-nu_yz*nu_zy)-(nu_xy+nu_xz*nu_zy)*(nu_yx+nu_yz*nu_zx)
+
+            MatM= 1/D*array([[(1-nu_yz*nu_zy)*Ex,(nu_xy+nu_xz*nu_zy)*Ex,0],  #equation 7.25 "a primer for finite elements", page 168
+                            [(nu_yx+nu_yz*nu_zx)*Ey,(1-nu_xz*nu_zx)*Ey,0],
+                            [0,0,D*Gxy]])
+
     return MatM  #returns the matrix for the material
 
 
@@ -91,7 +123,7 @@ def FindGlobalDof(node, dofT):
 
 
 if __name__ == "__main__":   #here the program starts
-    Name = "input3.txt"      #name of the input file
+    Name = "MyInputData.txt"      #name of the input file
     # ~ Name = "../Data/inT2D2.txt"
     # ~ Name = "../Data/SimplePlate.txt"
     MList, BoundList, LoadList, NodeList, ElemList = DataInput(Name)  #lists are extracted from this function
@@ -99,6 +131,8 @@ if __name__ == "__main__":   #here the program starts
     NE = len(ElemList)
     NN = len(NodeList)
     N = AssignGlobalDof(NodeList, ElemList)  # N total number of dofs in system
+    print "NE, NN, N:"
+    print "NE (elemens), NN(nodes), N (?)"
     print NE, NN, N
     EE, nu = MList[0], MList[1]
     Sparse = False  #"cheap" python programming
@@ -112,14 +146,15 @@ if __name__ == "__main__":   #here the program starts
     for i in ElemList:   #i is the element in the element list
         MatM = MatC(i.PlSt, EE, nu, i.dim)  #what we got from material matrix function is now named MatM
         KL = zeros((i.DofE, i.DofE), dtype=float)
-        #
+
+        #integration in specific integration points
         for j in xrange(i.nIntL):  #more complicated and generalized that in our excercise example
             r = SamplePoints[i.IntT, i.nInt, j][0]
             s = SamplePoints[i.IntT, i.nInt, j][1]
             t = SamplePoints[i.IntT, i.nInt, j][2]
             BB, JJ = i.FormB(r, s, t)
-            f = JJ * i.Geom * SampleWeight[i.IntT, i.nInt, j]
-            KL = KL + f * dot(transpose(BB), dot(MatM, BB))
+            f = JJ * i.Geom * SampleWeight[i.IntT, i.nInt, j]   #i.geom = thickness (in case of 4-node quadra)
+            KL = KL + f * dot(transpose(BB), dot(MatM, BB))  #equation 3.62, page 56 of script
         #
         ndof0 = 0                   #local stiffness matrix to global stiffness matrix
         for j0 in xrange(i.nNod):  # assemble rows with loop over node rows -- nNod: number of nodes per element
@@ -134,14 +169,16 @@ if __name__ == "__main__":   #here the program starts
                 ndof1 = ndof1 + i.DofN[j1]  # update entry for dof column index
             ndof0 = ndof0 + i.DofN[j0]  # update entry for dof row index
 
+
     # fill load vector
     for i in LoadList:
         k = FindGlobalDof(NodeList[i[0]], i[1])
         pp[k] = pp[k] + i[2]  # global load vector, i[2] has load value
 
+
     # assign displacement boundary conditions
     for i in BoundList:
-        k = FindGlobalDof(NodeList[i[0]], i[1])
+        k = FindGlobalDof(NodeList[i[0]], i[1]) #in the case that GlobDofStart =0, the k equals to i[1]
         for j in xrange(N):
             pp[j] = pp[j] - KK[j, k] * i[2]
             KK[j, k] = 0.
@@ -149,17 +186,55 @@ if __name__ == "__main__":   #here the program starts
         KK[k, k] = 1.
         pp[k] = i[2]
 
+    print 'pp:'
+    print pp
     # solve system
     if Sparse:
         K_LU = linsolve.splu(KK.tocsc(), permc_spec=3)  # triangulization of stiffness matrix
         uu = K_LU.solve(pp)  # solution of K*u=R -> displacement increment
     else:
         uu = linalg.solve(KK, pp)
-    print time() - stime
+    # print time() - stime
+    print 'UU:'
     print uu  #displacement vector that we've calculated and shall be writted in the output file
-    DataOut("results.txt", uu)
-    if not Sparse:
-        plt.matshow(KK)
-        plt.grid()
-        plt.show()
-    print 'finish'
+    DataOut("results_disp.txt", uu)
+
+    stresses_global = zeros(NE*3, dtype=float)
+
+    for i in ElemList:
+        MatM = MatC(i.PlSt, EE, nu, i.dim)        #creating the element stiffness matrix for the element
+        r=0.0                                     #setting the local coordinates to the middle of the element
+        s=0.0
+        BB, JJ = i.FormB(r, s, t)                 #creating B matrix
+
+        uu_el=zeros(8,dtype=float)           #matrix containing displacements of the nodes of the element
+
+        for j in xrange(4):
+            uu_el[j*2] = uu[i.Inzi[j]*2]     #pulling the displacements of the nodes from the main displacement matrix
+            uu_el[j*2+1] = uu[i.Inzi[j]*2+1]
+
+        strains = dot(BB,uu_el)  #equation (2.7) from the script
+        stresses = dot(MatM,strains)  #equation (2.23) from the script
+
+        stresses_global[i.Label * 3 - 3] = stresses[0]  #sigma_x
+        stresses_global[i.Label * 3 - 2] = stresses[1]  #sigma_y
+        stresses_global[i.Label*3-1] = stresses[2]      #tau_xy
+
+    DataOutStresses("results_stress.txt", stresses_global)
+
+    print stresses_global
+    # if not Sparse:
+    #     plt.matshow(KK)
+    #     plt.grid()
+    #     plt.show()
+    # print 'finish'
+
+
+    #calculating the stress state - try1
+    # sigma=dot(MatM,uu)
+    # print sigma
+
+    # calculating the stress state - try2
+
+
+
